@@ -1,12 +1,11 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flasgger import Swagger
-import os
-from config import Config  # Adicione esta linha para importar a configuração
+from config import Config
 
 # Configuração do Flask e Swagger
 app = Flask(__name__)
-app.config.from_object(Config)  # Atualize esta linha para usar a configuração do config.py
+app.config.from_object(Config)  
 Swagger(app)
 
 # Inicializando o SQLAlchemy
@@ -26,6 +25,10 @@ class Aluno(db.Model):
 @app.route('/')
 def index():
     return "Servidor Flask está funcionando!"
+
+# Bloco de inicialização do banco de dados
+with app.app_context():
+    db.create_all()
 
 # Rotas
 @app.route('/alunos', methods=['POST'])
@@ -228,4 +231,4 @@ def delete_aluno(id):
     return jsonify({'message': 'Aluno não encontrado'}), 404
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000)
