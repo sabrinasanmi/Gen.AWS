@@ -1,12 +1,11 @@
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from flasgger import Swagger
+from flask_swagger_ui import get_swaggerui_blueprint
 from config import Config
 
 # Configuração do Flask e Swagger
 app = Flask(__name__)
-app.config.from_object(Config)  
-Swagger(app)
+app.config.from_object(Config)
 
 # Inicializando o SQLAlchemy
 db = SQLAlchemy(app)
@@ -33,47 +32,6 @@ with app.app_context():
 # Rotas
 @app.route('/alunos', methods=['POST'])
 def create_aluno():
-    """
-    Criar um novo aluno
-    ---
-    parameters:
-      - name: aluno
-        in: body
-        required: true
-        schema:
-          id: Aluno
-          required:
-            - nome
-            - idade
-            - nota_primeiro_semestre
-            - nota_segundo_semestre
-            - professor
-            - sala
-          properties:
-            nome:
-              type: string
-              description: Nome do aluno
-            idade:
-              type: integer
-              description: Idade do aluno
-            nota_primeiro_semestre:
-              type: number
-              format: float
-              description: Nota do primeiro semestre
-            nota_segundo_semestre:
-              type: number
-              format: float
-              description: Nota do segundo semestre
-            professor:
-              type: string
-              description: Nome do professor
-            sala:
-              type: string
-              description: Número da sala
-    responses:
-      201:
-        description: Aluno criado com sucesso
-    """
     data = request.json
     aluno = Aluno(
         nome=data['nome'],
@@ -89,17 +47,6 @@ def create_aluno():
 
 @app.route('/alunos', methods=['GET'])
 def get_alunos():
-    """
-    Listar todos os alunos
-    ---
-    responses:
-      200:
-        description: Lista de alunos
-        schema:
-          type: array
-          items:
-            $ref: '#/definitions/Aluno'
-    """
     alunos = Aluno.query.all()
     return jsonify([{
         'id': aluno.id,
@@ -113,23 +60,6 @@ def get_alunos():
 
 @app.route('/alunos/<int:id>', methods=['GET'])
 def get_aluno(id):
-    """
-    Obter um aluno por ID
-    ---
-    parameters:
-      - name: id
-        in: path
-        type: integer
-        required: true
-        description: ID do aluno
-    responses:
-      200:
-        description: Detalhes do aluno
-        schema:
-          $ref: '#/definitions/Aluno'
-      404:
-        description: Aluno não encontrado
-    """
     aluno = Aluno.query.get(id)
     if aluno:
         return jsonify({
@@ -145,54 +75,6 @@ def get_aluno(id):
 
 @app.route('/alunos/<int:id>', methods=['PUT'])
 def update_aluno(id):
-    """
-    Atualizar um aluno por ID
-    ---
-    parameters:
-      - name: id
-        in: path
-        type: integer
-        required: true
-        description: ID do aluno
-      - name: aluno
-        in: body
-        required: true
-        schema:
-          id: Aluno
-          required:
-            - nome
-            - idade
-            - nota_primeiro_semestre
-            - nota_segundo_semestre
-            - professor
-            - sala
-          properties:
-            nome:
-              type: string
-              description: Nome do aluno
-            idade:
-              type: integer
-              description: Idade do aluno
-            nota_primeiro_semestre:
-              type: number
-              format: float
-              description: Nota do primeiro semestre
-            nota_segundo_semestre:
-              type: number
-              format: float
-              description: Nota do segundo semestre
-            professor:
-              type: string
-              description: Nome do professor
-            sala:
-              type: string
-              description: Número da sala
-    responses:
-      200:
-        description: Aluno atualizado com sucesso
-      404:
-        description: Aluno não encontrado
-    """
     data = request.json
     aluno = Aluno.query.get(id)
     if aluno:
@@ -208,27 +90,22 @@ def update_aluno(id):
 
 @app.route('/alunos/<int:id>', methods=['DELETE'])
 def delete_aluno(id):
-    """
-    Deletar um aluno por ID
-    ---
-    parameters:
-      - name: id
-        in: path
-        type: integer
-        required: true
-        description: ID do aluno
-    responses:
-      200:
-        description: Aluno deletado com sucesso
-      404:
-        description: Aluno não encontrado
-    """
     aluno = Aluno.query.get(id)
     if aluno:
         db.session.delete(aluno)
         db.session.commit()
         return jsonify({'message': 'Aluno deletado com sucesso!'})
     return jsonify({'message': 'Aluno não encontrado'}), 404
+
+# Configuração do Swagger UI
+SWAGGER_URL = '/apidocs'
+API_URL = '/static/apispec_1.json'
+swagger_ui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={'app_name': "API de Alunos"}
+)
+app.register_blueprint(swagger_ui_blueprint, url_prefix=SWAGGER_URL)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
